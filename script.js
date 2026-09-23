@@ -1,3 +1,34 @@
+
+const LOCATION_ERROR_MSG = "We couldn't get your location. Please turn on your location or open the web app in a different browser to add a shipping location.";
+
+// Location captured at sign-up (if the sign-up page was able to get it)
+function getSignupLocation(){
+  try {
+    const raw = localStorage.getItem("clarehil_signup_location");
+    if(raw){
+      const loc = JSON.parse(raw);
+      if(loc && loc.address) return String(loc.address);
+      if(loc && loc.lat != null && loc.lng != null) return `Lat: ${Number(loc.lat).toFixed(5)}, Lng: ${Number(loc.lng).toFixed(5)}`;
+    }
+  } catch(e) {}
+  return "";
+}
+
+function requestShippingLocation(cb){
+  if(!navigator.geolocation){
+    state.locationError=LOCATION_ERROR_MSG;
+    render(); return;
+  }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    state.shippingAddress=`Lat: ${pos.coords.latitude.toFixed(5)}, Lng: ${pos.coords.longitude.toFixed(5)}`;
+    state.locationError="";
+    if(cb) cb();
+    render();
+  },()=>{
+    state.locationError=LOCATION_ERROR_MSG;
+    render();
+  },{enableHighAccuracy:true,timeout:10000});
+}
 /* ==========================================================================
    LUMĒ — Luxury Commerce (demo front end)
    No backend: "checkout", "payment", etc. mutate local state so every
@@ -38,6 +69,9 @@ const state = {
   wishlist: new Set(),
   cart: [],
   query: "",
+  shippingAddress: "",
+  locationError: "",
+  categoryMenuOpen: false,
   detailImage: 0,
   color: 0,
   size: 0,
@@ -104,7 +138,7 @@ function icon(name) {
   const paths = {
     search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
     heart: '<path d="M20.8 8.7c0 5.2-8.8 10.3-8.8 10.3S3.2 13.9 3.2 8.7A4.7 4.7 0 0 1 12 6.1a4.7 4.7 0 0 1 8.8 2.6Z"/>',
-    bag: '<path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+    bag: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><path d="M256 144C256 108.7 284.7 80 320 80C355.3 80 384 108.7 384 144L384 192L256 192L256 144zM208 192L144 192C117.5 192 96 213.5 96 240L96 448C96 501 139 544 192 544L448 544C501 544 544 501 544 448L544 240C544 213.5 522.5 192 496 192L432 192L432 144C432 82.1 381.9 32 320 32C258.1 32 208 82.1 208 144L208 192zM232 240C245.3 240 256 250.7 256 264C256 277.3 245.3 288 232 288C218.7 288 208 277.3 208 264C208 250.7 218.7 240 232 240zM384 264C384 250.7 394.7 240 408 240C421.3 240 432 250.7 432 264C432 277.3 421.3 288 408 288C394.7 288 384 277.3 384 264z"/></svg>`,
     arrow: '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
     back: '<path d="m15 18-6-6 6-6"/>',
     chev: '<path d="m9 6 6 6-6 6"/>',
@@ -116,15 +150,25 @@ function icon(name) {
     check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>',
     home: '<path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/>',
     user: '<circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.5-4 4-5.5 7-5.5s5.5 1.5 7 5.5"/>',
-    gear: '<circle cx="12" cy="12" r="3"/><path d="M4.6 12a7.4 7.4 0 0 1 .3-2.1L3 8.4l1.6-2.8 2.3.9c.7-.7 1.5-1.2 2.4-1.6L9.7 2h3.2l.4 2.9c.9.4 1.7.9 2.4 1.6l2.3-.9L19.6 8.4l-1.9 1.5c.2.7.3 1.4.3 2.1s-.1 1.4-.3 2.1l1.9 1.5-1.6 2.8-2.3-.9c-.7.7-1.5 1.2-2.4 1.6l-.4 2.9H9.7l-.4-2.9a7 7 0 0 1-2.4-1.6l-2.3.9L3 15.6l1.9-1.5c-.2-.7-.3-1.4-.3-2.1Z"/>',
+    gear: `<svg class="icon-fill" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><path d="M415.9 274.5C428.1 271.2 440.9 277 446.4 288.3L465 325.9C475.3 327.3 485.4 330.1 494.9 334L529.9 310.7C540.4 303.7 554.3 305.1 563.2 314L582.4 333.2C591.3 342.1 592.7 356.1 585.7 366.5L562.4 401.4C564.3 406.1 566 411 567.4 416.1C568.8 421.2 569.7 426.2 570.4 431.3L608.1 449.9C619.4 455.5 625.2 468.3 621.9 480.4L614.9 506.6C611.6 518.7 600.3 526.9 587.7 526.1L545.7 523.4C539.4 531.5 532.1 539 523.8 545.4L526.5 587.3C527.3 599.9 519.1 611.3 507 614.5L480.8 621.5C468.6 624.8 455.9 619 450.3 607.7L431.7 570.1C421.4 568.7 411.3 565.9 401.8 562L366.8 585.3C356.3 592.3 342.4 590.9 333.5 582L314.3 562.8C305.4 553.9 304 540 311 529.5L334.3 494.5C332.4 489.8 330.7 484.9 329.3 479.8C327.9 474.7 327 469.6 326.3 464.6L288.6 446C277.3 440.4 271.6 427.6 274.8 415.5L281.8 389.3C285.1 377.2 296.4 369 309 369.8L350.9 372.5C357.2 364.4 364.5 356.9 372.8 350.5L370.1 308.7C369.3 296.1 377.5 284.7 389.6 281.5L415.8 274.5zM448.4 404C424.1 404 404.4 423.7 404.5 448.1C404.5 472.4 424.2 492 448.5 492C472.8 492 492.5 472.3 492.5 448C492.4 423.6 472.7 404 448.4 404zM224.9 18.5L251.1 25.5C263.2 28.8 271.4 40.2 270.6 52.7L267.9 94.5C276.2 100.9 283.5 108.3 289.8 116.5L331.8 113.8C344.3 113 355.7 121.2 359 133.3L366 159.5C369.2 171.6 363.5 184.4 352.2 190L314.5 208.6C313.8 213.7 312.8 218.8 311.5 223.8C310.2 228.8 308.4 233.8 306.5 238.5L329.8 273.5C336.8 284 335.4 297.9 326.5 306.8L307.3 326C298.4 334.9 284.5 336.3 274 329.3L239 306C229.5 309.9 219.4 312.7 209.1 314.1L190.5 351.7C184.9 363 172.1 368.7 160 365.5L133.8 358.5C121.6 355.2 113.5 343.8 114.3 331.3L117 289.4C108.7 283 101.4 275.6 95.1 267.4L53.1 270.1C40.6 270.9 29.2 262.7 25.9 250.6L18.9 224.4C15.7 212.3 21.4 199.5 32.7 193.9L70.4 175.3C71.1 170.2 72.1 165.2 73.4 160.1C74.8 155 76.4 150.1 78.4 145.4L55.1 110.5C48.1 100 49.5 86.1 58.4 77.2L77.6 58C86.5 49.1 100.4 47.7 110.9 54.7L145.9 78C155.4 74.1 165.5 71.3 175.8 69.9L194.4 32.3C200 21 212.7 15.3 224.9 18.5zM192.4 148C168.1 148 148.4 167.7 148.4 192C148.4 216.3 168.1 236 192.4 236C216.7 236 236.4 216.3 236.4 192C236.4 167.7 216.7 148 192.4 148z"/></svg>`,
     mail: '<path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/>',
     card: '<path d="M3 7h18v10H3z"/><path d="M3 10h18"/>',
     close: '<path d="m6 6 12 12M18 6 6 18"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
     pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/>',
-    phone: '<path d="M6.5 3.5 9 7l-2 2.2c.9 2 2.8 3.9 4.8 4.8L14 12l3.5 2.5-.7 3a17 17 0 0 1-13.8-13.8Z"/>'
+    chat: '<path d="M4 5h16v11H9l-5 4V5Z"/>',
+    phone: '<path d="M6.5 3.5 9 7l-2 2.2c.9 2 2.8 3.9 4.8 4.8L14 12l3.5 2.5-.7 3a17 17 0 0 1-13.8-13.8Z"/>',
+    shirt: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><path d="M320.2 176C364.4 176 400.2 140.2 400.2 96L453.7 96C470.7 96 487 102.7 499 114.7L617.6 233.4C630.1 245.9 630.1 266.2 617.6 278.7L566.9 329.4C554.4 341.9 534.1 341.9 521.6 329.4L480.2 288L480.2 512C480.2 547.3 451.5 576 416.2 576L224.2 576C188.9 576 160.2 547.3 160.2 512L160.2 288L118.8 329.4C106.3 341.9 86 341.9 73.5 329.4L22.9 278.6C10.4 266.1 10.4 245.8 22.9 233.3L141.5 114.7C153.5 102.7 169.8 96 186.8 96L240.3 96C240.3 140.2 276.1 176 320.3 176z"/></svg>`,
+    trouser: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><path d="M224 64H416L448 256L384 576H304L320 352L256 576H192L128 256L160 64H224Z"/></svg>`,
+    shoe: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><path d="M328 256C306.9 243.9 285.7 231.8 256 226.7L256 86.4C289.7 77 343.4 64 384 64C480 64 608 112 608 192C608 272 488.4 288 432 288C384 288 356 272 328 256zM160 96L208 96L208 224L160 224C124.7 224 96 195.3 96 160C96 124.7 124.7 96 160 96zM264 384C292 368 320 352 368 352C424.4 352 544 368 544 448C544 528 416 576 320 576C279.5 576 225.7 563 192 553.6L192 413.3C221.7 408.1 242.9 396 264 383.9zM96 544C60.7 544 32 515.3 32 480C32 444.7 60.7 416 96 416L144 416L144 544L96 544z"/></svg>`,
+    watch: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><path d="M264.5 64C251.2 64 240.5 74.7 240.5 88C240.5 101.3 251.2 112 264.5 112L296.5 112L296.5 137.3C188.5 149.2 104.5 240.8 104.5 352C104.5 471.3 201.2 568 320.5 568C439.8 568 536.5 471.3 536.5 352C536.5 312.2 525.7 274.9 506.9 242.8L535.1 214.6C547.6 202.1 547.6 181.8 535.1 169.3C522.6 156.8 502.3 156.8 489.8 169.3L466.4 192.7C433.5 162.5 391.2 142.4 344.4 137.2L344.4 111.9L376.4 111.9C389.7 111.9 400.4 101.2 400.4 87.9C400.4 74.6 389.7 63.9 376.4 63.9L264.4 63.9zM344.5 248L344.5 352C344.5 365.3 333.8 376 320.5 376C307.2 376 296.5 365.3 296.5 352L296.5 248C296.5 234.7 307.2 224 320.5 224C333.8 224 344.5 234.7 344.5 248z"/></svg>`,
+    hat: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><path d="M405.5 349.6C439.2 349.6 487.8 342.7 487.8 302.6C488 295.9 488.7 300.8 466.9 206.4C462.3 187.3 458.2 178.6 424.6 161.8C398.5 148.5 341.7 126.4 324.9 126.4C309.2 126.4 304.7 146.6 286 146.6C268 146.6 254.7 131.5 237.9 131.5C221.8 131.5 211.2 142.5 203.1 165.1C175.6 242.7 176.8 239.4 177 243.4C177 268.2 274.6 349.5 405.5 349.5zM493 318.8C497.7 340.8 497.7 343.1 497.7 346C497.7 383.7 455.4 404.6 399.7 404.6C274 404.7 163.8 331 163.8 282.3C163.8 275.5 165.2 268.8 167.9 262.6C122.7 264.9 64.1 272.9 64.1 324.6C64.1 409.3 264.7 513.6 423.6 513.6C545.4 513.6 576.1 458.5 576.1 415C576.1 380.8 546.5 342 493.2 318.8z"/></svg>`,
+    sparkles: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><path d="M320 64L352 192L480 224L352 256L320 384L288 256L160 224L288 192L320 64ZM480 384L496 448L560 464L496 480L480 544L464 480L400 464L464 448L480 384Z"/></svg>`,
+
   };
-  return `<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${paths[name] || ""}</svg>`;
+  const iconData = paths[name] || "";
+  if (iconData.trim().startsWith("<svg")) return iconData;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${iconData}</svg>`;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -240,15 +284,10 @@ function viewHome() {
     </section>
 
     <section class="block">
-      <div class="block-head"><h2>Shop by category</h2></div>
-      <div class="category-scroller">
-        ${categories.map(([name, img]) => `
-          <button class="category-card" data-cat="${name}">
-            <img src="${img}" alt="${name}">
-            <span>${name}</span>
-          </button>`).join("")}
-      </div>
-    </section>
+      <div class="block-head"><h2>Shop by category</h2><button id="categoryToggle" class="icon-circle">${icon("menu")}</button></div>
+      <div class="category-popup ${state.categoryMenuOpen ? "open" : ""}" id="categoryPopup"><div class="category-popup-card">
+      ${[["Shirts","shirt"],["Shoes","shoe"],["Bags","bag"],["Watches","watch"],["Hats","hat"],["Accessories","sparkles"]].map(([n,i])=>`<button class="category-item" data-cat="${n}"><span class="category-item-icon">${icon(i)}</span><span>${n}</span></button>`).join("")}
+      </div></div></section>
 
     <section class="block" id="shop">
       <div class="block-head"><h2>Featured pieces</h2></div>
@@ -488,7 +527,7 @@ function viewAccount() {
     </div>
     <nav class="menu-list">
       <button class="menu-row" data-nav="account-addresses">${icon("pin")}<span>Shipping addresses</span>${icon("chev")}</button>
-      <button class="menu-row" data-nav="account-payments">${icon("card")}<span>Payment methods</span>${icon("chev")}</button>
+      
       <button class="menu-row" data-nav="account-settings">${icon("gear")}<span>Settings</span>${icon("chev")}</button>
       <button class="menu-row" data-nav="support">${icon("mail")}<span>Support</span>${icon("chev")}</button>
     </nav>
@@ -509,7 +548,17 @@ function viewAccount() {
 function viewAddresses() {
   return `
     <div class="page-heading"><h1>Shipping addresses</h1></div>
+    ${state.locationError ? `<div class="info-card"><div class="list-row"><div class="list-row-body"><p style="color:#b3261e;font-size:13px;">${escapeHtml(state.locationError)}</p><button class="btn-secondary" id="retryLocation" style="margin-top:8px;">Try again</button></div></div></div>` : ""}
     <div class="info-card">
+      ${state.shippingAddress ? `
+        <div class="list-row">
+          <div class="list-row-icon">${icon("pin")}</div>
+          <div class="list-row-body">
+            <span class="tag-pill">Current location</span>
+            <strong>${escapeHtml(state.user.name || "Customer")}</strong>
+            <p>${escapeHtml(state.shippingAddress)}</p>
+          </div>
+        </div>` : ""}
       ${state.addresses.map(a => `
         <div class="list-row">
           <div class="list-row-icon">${icon("pin")}</div>
@@ -523,7 +572,7 @@ function viewAddresses() {
             <button data-edit-address="${a.id}">Edit</button>
             <button class="danger" data-delete-address="${a.id}">Delete</button>
           </div>
-        </div>`).join("") || `<p style="font-size:13px;color:var(--ink-soft)">No saved addresses yet.</p>`}
+        </div>`).join("") || `${state.shippingAddress ? "" : `<p style="font-size:13px;color:var(--ink-soft)">No saved addresses yet.</p>`}`}
     </div>
     <div class="block" style="padding-top:14px;"><button class="btn-secondary btn-block" id="addAddress">+ Add new address</button></div>
   `;
@@ -580,13 +629,17 @@ function viewSupport() {
   return `
     <div class="page-heading"><h1>Support</h1><p>We're here to help with anything, any time.</p></div>
     <div class="info-card">
-      <a class="list-row" href="mailto:hello@lume-studio.example">
+      <a class="list-row" href="mailto:clarehilstyles@gmail.com">
         <span class="list-row-icon">${icon("mail")}</span>
-        <span class="list-row-body"><strong>Email us</strong><p>hello@lume-studio.example</p></span>
+        <span class="list-row-body"><strong>Email us</strong><p>clarehilstyles@gmail.com</p></span>
       </a>
-      <a class="list-row" href="tel:+2348001234567">
+      <a class="list-row" href="tel:08072349150">
         <span class="list-row-icon">${icon("phone")}</span>
-        <span class="list-row-body"><strong>Call us</strong><p>+234 800 123 4567</p></span>
+        <span class="list-row-body"><strong>Call us</strong><p>08072349150</p></span>
+      </a>
+      <a class="list-row" href="https://wa.me/2348033296687" target="_blank" rel="noopener">
+        <span class="list-row-icon">${icon("chat")}</span>
+        <span class="list-row-body"><strong>WhatsApp</strong><p>+2348033296687</p></span>
       </a>
     </div>
     <div class="info-card">
@@ -636,7 +689,9 @@ function bindChrome() {
 }
 
 function bindHome() {
-  on("[data-cat]", "click", e => { state.query = e.currentTarget.dataset.cat; go("home"); });
+  $("#categoryToggle")?.addEventListener("click",()=>{state.categoryMenuOpen=!state.categoryMenuOpen;render();});
+  $("#categoryPopup")?.addEventListener("click",e=>{if(e.target.id==="categoryPopup"){state.categoryMenuOpen=false;render();}});
+  on("[data-cat]","click",e=>{state.query=e.currentTarget.dataset.cat;state.categoryMenuOpen=false;render();$("#shop")?.scrollIntoView({behavior:"smooth"});});
   on("[data-scroll-shop]", "click", () => $("#shop")?.scrollIntoView({ behavior: "smooth" }));
   $("#search")?.addEventListener("input", e => { state.query = e.target.value; render(); });
   on("[data-copy-promo]", "click", async () => {
@@ -700,6 +755,10 @@ function bindCart() {
 }
 
 function bindAddresses() {
+  if(!state.shippingAddress){
+    const saved = getSignupLocation();
+    if(saved){ state.shippingAddress = saved; state.locationError = ""; render(); return; }
+  }
   on("[data-delete-address]", "click", e => {
     state.addresses = state.addresses.filter(a => a.id !== Number(e.currentTarget.dataset.deleteAddress));
     toast("Address removed");
@@ -707,6 +766,11 @@ function bindAddresses() {
   });
   on("[data-edit-address]", "click", () => toast("Address editing opens here in the full app"));
   $("#addAddress")?.addEventListener("click", () => {
+    if(!state.shippingAddress){
+      toast("Getting your location…");
+      requestShippingLocation(() => toast("Location added as your shipping address"));
+      return;
+    }
     state.addresses.push({ id: state.nextAddressId++, tag: null, name: state.user.name || "Customer", line1: "New address", line2: "Tap Edit to fill in the details" });
     toast("Address added");
     render();
@@ -859,3 +923,4 @@ window.addEventListener("hashchange", () => {
   render();
   await loadProductsFromSupabase();
 })();
+document.addEventListener("click",e=>{if(e.target.id==="retryLocation") requestShippingLocation();});

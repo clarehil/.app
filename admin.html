@@ -759,7 +759,7 @@ body{background:var(--admin-bone);color:var(--admin-ink);font-family:Inter,-appl
             </div>
 
             <div class="dropzone" id="dropzone">
-              <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" multiple hidden>
+              <input type="file" id="fileInput" accept="image/*" multiple hidden>
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
               <p><strong>Click to upload</strong> or drag and drop</p>
               <span>Supports JPG, PNG, WEBP (Max 10MB each)</span>
@@ -1168,49 +1168,138 @@ body{background:var(--admin-bone);color:var(--admin-ink);font-family:Inter,-appl
   const next1 = $('#next1');
   let mediaSeed = 0;
 
-  function updateNext1(){ next1.disabled = window.APP_STATE.media.length === 0; }
+  // Keep the selected File objects in memory. Do not depend on the native
+  // picker remaining available after it closes (Android/Google Photos can
+  // return content-backed files whose input value is immediately cleared).
+  function updateNext1() {
+    next1.disabled = window.APP_STATE.media.length === 0;
+  }
 
-  function renderMedia(){
+  function isSupportedImage(file) {
+    if (!file) return false;
+    const type = String(file.type || '').toLowerCase();
+    const name = String(file.name || '').toLowerCase();
+    const ext = name.includes('.') ? name.split('.').pop() : '';
+    return type.startsWith('image/') ||
+      ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'].includes(ext);
+  }
+
+  function renderMedia() {
     mediaGrid.innerHTML = '';
     window.APP_STATE.media.forEach((item, idx) => {
       const el = document.createElement('div');
       el.className = 'media-item' + (idx === 0 ? ' main-item' : '');
+
       const img = document.createElement('img');
-      img.src = item.url; img.alt = 'Product image';
+      img.src = item.url;
+      img.alt = item.file?.name || 'Product image';
+      img.onerror = () => {
+        img.removeAttribute('src');
+        img.alt = 'Selected image';
+        img.style.background = '#F3F4F7';
+      };
       el.appendChild(img);
-      if(idx === 0){ const label=document.createElement('span'); label.className='main-label'; label.textContent='Main Image'; el.appendChild(label); }
-      const remove=document.createElement('button'); remove.type='button'; remove.className='remove-btn'; remove.setAttribute('aria-label','Remove image');
-      remove.innerHTML='<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-      remove.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); window.APP_STATE.media=window.APP_STATE.media.filter(m=>m.id!==item.id); renderMedia(); syncPreview(); };
+
+      if (idx === 0) {
+        const label = document.createElement('span');
+        label.className = 'main-label';
+        label.textContent = 'Main Image';
+        el.appendChild(label);
+      }
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'remove-btn';
+      remove.setAttribute('aria-label', 'Remove image');
+      remove.innerHTML = '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+      remove.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const removed = window.APP_STATE.media.find(m => m.id === item.id);
+        if (removed?.url?.startsWith('blob:')) {
+          try { URL.revokeObjectURL(removed.url); } catch (_) {}
+        }
+        window.APP_STATE.media = window.APP_STATE.media.filter(m => m.id !== item.id);
+        renderMedia();
+        syncPreview();
+      };
       el.appendChild(remove);
-      el.onclick=(e)=>{ if(e.target.closest('.remove-btn')) return; const i=window.APP_STATE.media.findIndex(m=>m.id===item.id); if(i>0){ const [picked]=window.APP_STATE.media.splice(i,1); window.APP_STATE.media.unshift(picked); renderMedia(); syncPreview(); }};
+
+      el.onclick = (e) => {
+        if (e.target.closest('.remove-btn')) return;
+        const i = window.APP_STATE.media.findIndex(m => m.id === item.id);
+        if (i > 0) {
+          const [picked] = window.APP_STATE.media.splice(i, 1);
+          window.APP_STATE.media.unshift(picked);
+          renderMedia();
+          syncPreview();
+        }
+      };
+
       mediaGrid.appendChild(el);
     });
     updateNext1();
   }
 
-  function addMediaItem(item){ window.APP_STATE.media.push(item); renderMedia(); syncPreview(); }
-
-  function handleFiles(fileList){
-    const dbg=document.getElementById('uploadDebugLine');
-    const files=Array.from(fileList||[]);
-    if(!files.length) return;
-    files.forEach(file=>{
-      if(!/^image\/(jpeg|png|webp)$/i.test(file.type)){ if(dbg) dbg.textContent='Please select a JPG, PNG, or WEBP image.'; return; }
-      if(file.size>10*1024*1024){ if(dbg) dbg.textContent='"'+file.name+'" is larger than 10MB.'; return; }
-      const reader=new FileReader();
-      reader.onload=()=>{ addMediaItem({id:'m'+(++mediaSeed),url:reader.result,type:'image',file:file}); if(dbg) dbg.textContent='Image selected successfully. You can continue.'; };
-      reader.onerror=()=>{ if(dbg) dbg.textContent='Could not read the selected image.'; };
-      reader.readAsDataURL(file);
+  function addMediaItem(file) {
+    const url = URL.createObjectURL(file);
+    window.APP_STATE.media.push({
+      id: 'm' + (++mediaSeed),
+      url,
+      type: 'image',
+      file
     });
-    fileInput.value='';
+    renderMedia();
+    syncPreview();
   }
 
-  dropzone.addEventListener('click',e=>{ if(e.target!==fileInput) fileInput.click(); });
-  fileInput.addEventListener('change',e=>handleFiles(e.target.files));
-  ['dragenter','dragover'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.add('dragover');}));
-  ['dragleave','drop'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.remove('dragover');}));
-  dropzone.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
+  function handleFiles(fileList) {
+    const dbg = document.getElementById('uploadDebugLine');
+    const files = Array.from(fileList || []);
+    if (!files.length) {
+      if (dbg) dbg.textContent = 'No images were returned by the photo picker.';
+      updateNext1();
+      return;
+    }
+
+    let added = 0;
+    files.forEach(file => {
+      if (!isSupportedImage(file)) {
+        if (dbg) dbg.textContent = 'Unsupported file: ' + (file.name || 'selected file') + '. Please choose an image.';
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        if (dbg) dbg.textContent = '"' + (file.name || 'Image') + '" is larger than 10MB.';
+        return;
+      }
+      addMediaItem(file);
+      added++;
+    });
+
+    // Clear only after the File objects have been copied into APP_STATE.
+    fileInput.value = '';
+
+    if (dbg) {
+      dbg.textContent = added
+        ? `${added} image${added === 1 ? '' : 's'} selected successfully. You can continue.`
+        : 'No valid images were selected.';
+    }
+    updateNext1();
+  }
+
+  dropzone.addEventListener('click', e => {
+    if (e.target !== fileInput) fileInput.click();
+  });
+  fileInput.addEventListener('change', e => handleFiles(e.target.files));
+  ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  }));
+  ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+  }));
+  dropzone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
 
   // ---------- product variations ----------
   const variationsBody = $('#variationsBody');
