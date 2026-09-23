@@ -1,115 +1,53 @@
-https://clarehil.github.io/.app/
+-- Fix: null value in column "slug" of relation "products"
+-- Safe to run more than once. No front-end changes needed.
 
+-- 1) Make sure the slug column exists
+alter table public.products add column if not exists slug text;
 
-
--- Clarehil/Lume: fix "cannot save product" errors
--- Safe to run more than once. It does NOT delete or overwrite existing data.
-
--- 1) Products table (creates it if missing) ---------------------------------
-create table if not exists public.products (
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamptz not null default now()
-);
-
--- 2) Make sure every column admin.html sends exists --------------------------
-alter table public.products
-  add column if not exists name text,
-  add column if not exists brand text default '',
-  add column if not exists category text default 'Other',
-  add column if not exists price numeric default 0,
-  add column if not exists original_price numeric default 0,
-  add column if not exists stock integer default 0,
-  add column if not exists short_description text default '',
-  add column if not exists long_description text default '',
-  add column if not exists colors jsonb default '[]'::jsonb,
-  add column if not exists color_names jsonb default '[]'::jsonb,
-  add column if not exists sizes jsonb default '[]'::jsonb,
-  add column if not exists features jsonb default '[]'::jsonb,
-  add column if not exists specs jsonb default '[]'::jsonb,
-  add column if not exists variations jsonb default '[]'::jsonb,
-  add column if not exists tags jsonb default '[]'::jsonb,
-  add column if not exists images jsonb default '[]'::jsonb,
-  add column if not exists material text default '',
-  add column if not exists weight text default '',
-  add column if not exists dimensions text default '',
-  add column if not exists warranty text default '',
-  add column if not exists rating numeric default 0,
-  add column if not exists reviews_count integer default 0,
-  add column if not exists status text default 'published',
-  add column if not exists created_by uuid;
-
--- 3) If any list column was created earlier as text[], convert it to jsonb ---
---    (variations are objects, so text[] would reject them)
-do $$
-declare col text;
+-- 2) Auto-generate a unique slug from the product name on every insert
+create or replace function public.set_product_slug()
+returns trigger
+language plpgsql
+as $$
+declare
+  base text;
 begin
-  foreach col in array array['colors','color_names','sizes','features','specs','variations','tags','images']
+  if new.slug is null or btrim(new.slug) = '' then
+    base := lower(regexp_replace(coalesce(new.name, 'product'), '[^a-zA-Z0-9]+', '-', 'g'));
+    base := btrim(base, '-');
+    if base = '' then base := 'product'; end if;
+    new.slug := base || '-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 6);
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_set_product_slug on public.products;
+create trigger trg_set_product_slug
+  before insert on public.products
+  for each row execute function public.set_product_slug();
+
+-- 3) Fill slug for any existing rows that have none
+update public.products
+set slug = coalesce(nullif(btrim(lower(regexp_replace(coalesce(name,'product'), '[^a-zA-Z0-9]+', '-', 'g')), '-'), ''), 'product')
+           || '-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 6)
+where slug is null or btrim(slug) = '';
+
+-- 4) Stop other leftover NOT NULL columns from blocking saves
+--    (keeps id, name, slug, created_at required; relaxes everything else)
+do $$
+declare r record;
+begin
+  for r in
+    select column_name
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'products'
+      and is_nullable = 'NO'
+      and column_name not in ('id', 'name', 'slug', 'created_at')
   loop
-    if exists (
-      select 1 from information_schema.columns
-      where table_schema='public' and table_name='products'
-        and column_name=col and data_type='ARRAY'
-    ) then
-      execute format('alter table public.products alter column %I drop default', col);
-      execute format('alter table public.products alter column %I type jsonb using to_jsonb(%I)', col, col);
-      execute format('alter table public.products alter column %I set default ''[]''::jsonb', col);
-    end if;
+    execute format('alter table public.products alter column %I drop not null', r.column_name);
   end loop;
 end $$;
 
--- 4) Admin check helper (avoids RLS recursion on profiles) ------------------
-create or replace function public.is_admin()
-returns boolean
-language sql
-security definer
-set search_path = public
-stable
-as $$
-  select exists (
-    select 1 from public.profiles where id = auth.uid() and role = 'admin'
-  );
-$$;
-grant execute on function public.is_admin() to anon, authenticated;
-
--- 5) Row Level Security on products ------------------------------------------
-alter table public.products enable row level security;
-
-drop policy if exists "products public read" on public.products;
-drop policy if exists "products admin insert" on public.products;
-drop policy if exists "products admin update" on public.products;
-drop policy if exists "products admin delete" on public.products;
-
-create policy "products public read" on public.products
-  for select using (status = 'published' or public.is_admin());
-create policy "products admin insert" on public.products
-  for insert to authenticated with check (public.is_admin());
-create policy "products admin update" on public.products
-  for update to authenticated using (public.is_admin()) with check (public.is_admin());
-create policy "products admin delete" on public.products
-  for delete to authenticated using (public.is_admin());
-
--- 6) Storage bucket for product images ---------------------------------------
-insert into storage.buckets (id, name, public)
-values ('product-images', 'product-images', true)
-on conflict (id) do update set public = true;
-
-drop policy if exists "product-images public read" on storage.objects;
-drop policy if exists "product-images admin insert" on storage.objects;
-drop policy if exists "product-images admin update" on storage.objects;
-drop policy if exists "product-images admin delete" on storage.objects;
-
-create policy "product-images public read" on storage.objects
-  for select using (bucket_id = 'product-images');
-create policy "product-images admin insert" on storage.objects
-  for insert to authenticated with check (bucket_id = 'product-images' and public.is_admin());
-create policy "product-images admin update" on storage.objects
-  for update to authenticated using (bucket_id = 'product-images' and public.is_admin());
-create policy "product-images admin delete" on storage.objects
-  for delete to authenticated using (bucket_id = 'product-images' and public.is_admin());
-
--- 7) Let the API see the changes immediately ----------------------------------
 notify pgrst, 'reload schema';
-
--- 8) IMPORTANT: make sure YOUR account is an admin ---------------------------
--- Replace the email, then run this line by itself:
--- update public.profiles set role = 'admin' where email = 'YOUR_ADMIN_EMAIL@example.com';
