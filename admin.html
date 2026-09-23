@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Lumé Admin — Add New Product</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ RESET & BASE ============ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  width: 100%;
+}
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #F3F4F7;
+  color: #1B1D22;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+a { text-decoration: none; color: inherit; }
+
+/* ============ APP SHELL ============ */
+.app {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ============ SIDEBAR ============ */
+.sidebar {
+  width: 248px;
+  flex-shrink: 0;
+  background: transparent;
+  border-right: 25px;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 18px;
+  height: 100vh;
+  overflow-y: auto;
+}
+.brand { padding: 0 8px 26px; }
+.brand-name {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #15161A;
+}
+.brand-sub {
+  display: block;
+  font-size: 12px;
+  color: #9297A3;
+  margin-top: 1px;
+}
+
+.nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #565A66;
+  font-size: 14.5px;
+  font-weight: 500;
+  position: relative;
+  transition: background .15s ease, color .15s ease;
+}
+.nav-item svg { color: #9297A3; transition: color .15s ease; }
+.nav-item:hover { background: #F5F5F8; color: #1B1D22; }
+.nav-item:hover svg { color: #1B1D22; }
+.nav-item.active {
+  background: #EEECFC;
+  color: #5B3DE8;
+  font-weight: 600;
+}
+.nav-item.active svg { color: #5B3DE8; }
+.nav-badge {
+  margin-left: auto;
+  background: #EF4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.premium-card {
+  margin-top: 18px;
+  border-radius: 16px;
+  padding: 20px 18px;
+  background: linear-gradient(150deg, #4C2A9E 0%, #6D3FD1 55%, #8B4FE0 100%);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.premium-card::after {
+  content: "";
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,.08);
+  border-radius: 50%;
+}
+.premium-crown {
+  width: 22px; height: 22px;
+  color: #FFD86B;
+  margin-bottom: 10px;
+}
+.premium-card h4 { font-size: 15.5px; font-weight: 700; margin-bottom: 2px; }
+.premium-tag { font-size: 12.5px; color: rgba(255,255,255,.85); margin-bottom: 8px; }
+.premium-desc { font-size: 12.5px; color: rgba(255,255,255,.72); line-height: 1.45; }
+
+.sidebar-scrim { display: none; }
+
+/* ============ MOBILE TOPBAR ============ */
+.mobile-topbar { display: none; }
+
+/* ============ MAIN ============ */
+.main {
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- topbar ---- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 32px;
+  border-bottom: 1px solid #E7E8EC;
+  background: #FFFFFF;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.search-wrap {
+  flex: 1;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F3F4F7;
+  border: 1px solid #ECEDF1;
+  border-radius: 10px;
+  padding: 9px 14px;
+}
+.search-wrap svg { color: #9297A3; width: 17px; height: 17px; }
+.search-wrap input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  width: 100%;
+  color: #1B1D22;
+}
+.search-wrap input::placeholder { color: #9297A3; }
+
+.topbar-right { display: flex; align-items: center; gap: 18px; margin-left: auto; }
+
+.icon-btn {
+  border: none;
+  background: transparent;
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: #565A66;
+  position: relative;
+}
+.icon-btn:hover { background: #F5F5F8; }
+.icon-btn.bell .dot {
+  position: absolute;
+  top: 3px; right: 3px;
+  background: #5B3DE8;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #fff;
+}
+
+.profile {
+  display: flex; align-items: center; gap: 10px;
+  border: none; background: transparent;
+  padding: 4px 6px 4px 4px;
+  border-radius: 10px;
+}
+.profile:hover { background: #F5F5F8; }
+.profile img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.profile-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; }
+.profile-text strong { font-size: 13.5px; font-weight: 600; color: #1B1D22; }
+.profile-text small { font-size: 12px; color: #9297A3; }
+.profile svg { width: 15px; height: 15px; color: #9297A3; margin-left: 2px; }
+
+/* ---- content ---- */
+.content { padding: 28px 32px 48px; flex: 1; }
+
+.content-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 26px;
+  flex-wrap: wrap;
+}
+.content-header h1 {
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: #15161A;
+}
+.content-header p { color: #8A8F99; font-size: 14px; margin-top: 4px; }
+.header-actions { display: flex; gap: 10px; flex-shrink: 0; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.btn-ghost { background: #fff; border: 1px solid #E1E2E8; color: #3D404A; }
+.btn-ghost:hover { background: #F5F5F8; }
+.btn-dark { background: #15161A; color: #fff; }
+.btn-dark:hover { background: #24252B; }
+.btn-dark svg { width: 16px; height: 16px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.card {
+  background: #fff;
+  border: 1px solid #ECEDF1;
+  border-radius: 16px;
+  padding: 24px;
+}
+.card h2 { font-size: 16.5px; font-weight: 700; color: #15161A; margin-bottom: 4px; }
+.card-sub { font-size: 13px; color: #9297A3; margin-bottom: 16px; }
+.card-head-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.card-head-row h2 { margin-bottom: 0; }
+.view-all { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: #5B3DE8; }
+.view-all svg { width: 14px; height: 14px; }
+
+/* ---- page wrap (constrains the wizard to a comfortable reading width) ---- */
+.page-wrap { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+/* ---- stepper ---- */
+.stepper {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  padding: 4px 2px 14px;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 4px;
+  border-radius: 10px;
+}
+.step.clickable { cursor: pointer; }
+.step-num {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  background: #ECEDF1;
+  color: #9297A3;
+  flex-shrink: 0;
+  transition: background .15s ease, color .15s ease;
+}
+.step-label { font-size: 13.5px; font-weight: 600; color: #9297A3; white-space: nowrap; }
+.step.active .step-num { background: #5B3DE8; color: #fff; }
+.step.active .step-label { color: #15161A; }
+.step.done .step-num { background: #EEECFC; color: #5B3DE8; }
+.step.done .step-label { color: #3D404A; }
+.step-connector { width: 40px; height: 2px; background: #ECEDF1; flex-shrink: 0; margin: 0 6px; }
+.step-connector.done { background: #5B3DE8; }
+
+/* ---- wizard card ---- */
+.wizard-card { padding: 28px; }
+.step-panel-head { margin-bottom: 20px; }
+.step-panel-head h2 { font-size: 18px; }
+.step-panel-head p { color: #8A8F99; font-size: 13.5px; margin-top: 4px; }
+.step-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #ECEDF1;
+}
+
+/* ---- form ---- */
+.form-row {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+.form-row.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.form-row.align-top { align-items: start; }
+.card > .field:first-of-type, .step-panel > .field:first-of-type { margin-top: 0; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-top: 18px; position: relative; }
+.field label { font-size: 13px; font-weight: 600; color: #3D404A; }
+.req { color: #EF4444; }
+.field input[type="text"],
+.field input[type="number"],
+.field select,
+.field textarea {
+  border: 1px solid #E1E2E8;
+  border-radius: 10px;
+  padding: 10px 13px;
+  font-size: 14px;
+  color: #1B1D22;
+  outline: none;
+  background: #fff;
+  width: 100%;
+}
+.field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239297A3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; }
+.field input:focus, .field select:focus, .field textarea:focus, .editor-body:focus {
+  border-color: #8B6DF2;
+  box-shadow: 0 0 0 3px rgba(91,61,232,.12);
+}
+.field textarea { resize: vertical; min-height: 70px; }
+.counter { position: absolute; right: 13px; bottom: -18px; font-size: 11.5px; color: #9297A3; }
+
+.editor { border: 1px solid #E1E2E8; border-radius: 10px; overflow: hidden; }
+.editor-toolbar { display: flex; align-items: center; gap: 2px; padding: 8px 10px; border-bottom: 1px solid #ECEDF1; background: #FAFAFC; }
+.editor-toolbar button { width: 30px; height: 30px; border: none; background: transparent; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #565A66; }
+.editor-toolbar button svg { width: 15px; height: 15px; }
+.editor-toolbar button:hover { background: #ECEDF1; }
+.tb-sep { width: 1px; height: 18px; background: #E1E2E8; margin: 0 6px; }
+.editor-body { padding: 12px 13px; min-height: 90px; font-size: 14px; outline: none; color: #1B1D22; }
+.editor .counter { position: static; display: block; text-align: right; padding: 0 13px 10px; }
+
+/* ---- chip groups ---- */
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid #E1E2E8;
+  background: #fff;
+  color: #3D404A;
+  border-radius: 9px;
+  padding: 8px 13px;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.chip-dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,.1); }
+.chip.active { border-color: #5B3DE8; background: #F5F2FE; color: #5B3DE8; font-weight: 600; }
+.chip .check { display: none; }
+.chip.active::before {
+  content: "✓";
+  font-size: 11px;
+  color: #5B3DE8;
+}
+
+/* ---- recent products table ---- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+.rp-table th, .var-table th {
+  text-align: left;
+  font-size: 12px;
+  text-transform: none;
+  color: #9297A3;
+  font-weight: 600;
+  padding: 0 10px 10px;
+  border-bottom: 1px solid #ECEDF1;
+  white-space: nowrap;
+}
+.rp-table td, .var-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #F2F2F5;
+  font-size: 13.5px;
+  color: #3D404A;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.rp-table tr:last-child td, .var-table tr:last-child td { border-bottom: none; }
+.rp-thumb { width: 38px; height: 38px; border-radius: 9px; object-fit: cover; background: #F3F4F7; }
+.rp-name { font-weight: 600; color: #1B1D22; }
+.status-dot { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.status-dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #17B26A; }
+.status-dot.draft::before { background: #F79009; }
+.row-menu { border: none; background: transparent; color: #9297A3; width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.row-menu:hover { background: #F3F4F7; }
+.row-menu svg { width: 16px; height: 16px; }
+
+/* ---- media uploads ---- */
+.dropzone {
+  border: 1.5px dashed #D6D8E0;
+  border-radius: 14px;
+  padding: 30px 16px;
+  text-align: center;
+  color: #9297A3;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.dropzone:hover, .dropzone.dragover { border-color: #8B6DF2; background: #FAF9FF; }
+.dropzone svg { width: 30px; height: 30px; color: #B7B9C4; margin-bottom: 10px; }
+.dropzone p { font-size: 13.5px; color: #6B6F79; }
+.dropzone p strong { color: #5B3DE8; font-weight: 600; }
+.dropzone span { display: block; font-size: 12px; color: #ADB0B9; margin-top: 4px; }
+
+.media-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+.media-item {
+  position: relative;
+  aspect-ratio: 1/1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #F3F4F7;
+  border: 1px solid #ECEDF1;
+  cursor: pointer;
+}
+.media-item img, .media-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media-item.main-item { outline: 2px solid #5B3DE8; outline-offset: -1px; }
+.media-item .main-label {
+  position: absolute; bottom: 6px; left: 6px;
+  background: #5B3DE8; color: #fff;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 7px; border-radius: 6px;
+}
+.media-item .remove-btn {
+  position: absolute; top: 6px; right: 6px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(20,20,25,.55);
+  color: #fff; border: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.media-item .remove-btn svg { width: 12px; height: 12px; }
+.media-item .play-badge {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.15);
+}
+.media-item .play-badge svg { width: 32px; height: 32px; color: #fff; fill: #fff; }
+.media-hint { font-size: 12px; color: #9297A3; margin-top: 12px; }
+
+/* ---- variations table ---- */
+.color-cell { display: flex; align-items: center; gap: 8px; }
+.color-swatch { width: 15px; height: 15px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); flex-shrink: 0; }
+.del-btn { border: none; background: transparent; color: #C2451A; width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.del-btn:hover { background: #FDEEEA; }
+.del-btn svg { width: 15px; height: 15px; }
+.var-input { width: 100%; min-width: 60px; border: 1px solid transparent; border-radius: 6px; padding: 4px 6px; font-size: 13.5px; background: transparent; }
+.var-input:focus { border-color: #8B6DF2; background: #fff; outline: none; }
+
+.btn-add {
+  margin-top: 14px;
+  width: 100%;
+  justify-content: center;
+  background: #F5F2FE;
+  color: #5B3DE8;
+  border: 1px dashed #C9BBF7;
+}
+.btn-add:hover { background: #EFE9FD; }
+.btn-add svg { width: 16px; height: 16px; }
+
+/* ---- preview / review ---- */
+.preview-card { display: flex; gap: 14px; align-items: flex-start; }
+.preview-img {
+  width: 96px; height: 96px;
+  border-radius: 12px;
+  background: #F3F4F7 center/cover no-repeat;
+  flex-shrink: 0;
+  border: 1px solid #ECEDF1;
+}
+.preview-info h3 { font-size: 16px; font-weight: 700; color: #15161A; }
+.preview-brand { font-size: 13px; color: #9297A3; margin-top: 1px; }
+.preview-rating { display: flex; align-items: center; gap: 2px; margin-top: 8px; }
+.preview-rating svg { width: 14px; height: 14px; color: #F79009; }
+.preview-rating span { font-size: 12.5px; color: #9297A3; margin-left: 6px; }
+.preview-price-row { display: flex; align-items: center; gap: 9px; margin-top: 10px; flex-wrap: wrap; }
+.price-now { font-size: 17px; font-weight: 800; color: #15161A; }
+.price-old { font-size: 13px; color: #ADB0B9; text-decoration: line-through; }
+.stock-pill { background: #E9FBF2; color: #17B26A; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+
+.review-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 24px; margin-top: 22px; padding-top: 22px; border-top: 1px solid #ECEDF1; }
+.review-item { display: flex; flex-direction: column; gap: 2px; }
+.review-item .rl { font-size: 12px; color: #9297A3; font-weight: 600; }
+.review-item .rv { font-size: 14px; color: #1B1D22; font-weight: 500; word-break: break-word; }
+
+/* ---- toast ---- */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #15161A;
+  color: #fff;
+  padding: 13px 22px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  z-index: 999;
+  max-width: 90vw;
+  text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 860px) {
+  .form-row.cols-3 { grid-template-columns: 1fr 1fr; }
+  .content { padding: 22px 20px 40px; }
+  .topbar { padding: 14px 20px; }
+  .review-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  body { overflow: auto; }
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: transparent;
+    border-bottom: 1px;
+    position: sticky; top: 0; z-index: 20;
+  }
+  .mobile-logo { font-size: 19px; font-weight: 800; }
+  .mobile-avatar { margin-left: auto; }
+  .mobile-avatar img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+
+  .app { display: block; height: auto; min-height: 100vh; }
+  .main { height: auto; overflow: visible; }
+  .topbar { display: none; }
+
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 40;
+    box-shadow: 10px 0 30px rgba(0,0,0,.08);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-scrim {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(15,16,20,.4);
+    z-index: 30;
+  }
+  .sidebar-scrim.show { display: block; }
+
+  .content-header { flex-direction: column; align-items: stretch; }
+  .header-actions { justify-content: stretch; }
+  .header-actions .btn { flex: 1; justify-content: center; }
+
+  .step-label { display: none; }
+  .step-connector { width: 18px; }
+  .wizard-card { padding: 20px; }
+}
+
+@media (max-width: 520px) {
+  .form-row.cols-3 { grid-template-columns: 1fr; }
+  .media-grid { grid-template-columns: repeat(3, 1fr); }
+  .content { padding: 18px 14px 36px; }
+  .card { padding: 18px; }
+  .preview-card { flex-direction: column; }
+  .step-actions { flex-direction: column-reverse; align-items: stretch; }
+  .step-actions .btn { width: 100%; justify-content: center; }
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+
+<style>
+/* Clarehil Styles / dashboard design system */
+:root{
+  --admin-ink:#1c1712;
+  --admin-soft:#6f6558;
+  --admin-bone:#f8f5ee;
+  --admin-parchment:#efe8db;
+  --admin-line:#e4dccb;
+  --admin-brass:#a3763f;
+  --admin-brass-deep:#7c5a2e;
+}
+body{background:var(--admin-bone);color:var(--admin-ink);font-family:Inter,-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;}
+.content-header h1,.card h2,.brand-sub{font-family:Georgia,'Times New Roman',serif;}
+.sidebar{background:var(--admin-bone);border-right:1px solid var(--admin-line);}
+.admin-logo{display:block;width:170px;max-width:100%;height:auto;margin:0 0 10px 0;object-fit:contain;object-position:left center;}
+.brand-sub{color:var(--admin-soft)!important;font-family:Georgia,serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;}
+.nav-item{color:var(--admin-soft);}
+.nav-item svg{color:var(--admin-soft);}
+.nav-item:hover{background:var(--admin-parchment);color:var(--admin-ink);}
+.nav-item.active{background:rgba(163,118,63,.12);color:var(--admin-brass-deep);}
+.nav-item.active svg{color:var(--admin-brass-deep);}
+.topbar{background:var(--admin-bone);border-bottom:1px solid var(--admin-line);}
+.search-wrap{background:#fff;border:1px solid var(--admin-line);}
+.icon-btn{color:var(--admin-soft);}
+.icon-btn:hover,.profile:hover{background:var(--admin-parchment);}
+.icon-btn.bell .dot{background:var(--admin-brass);}
+.profile-text strong{color:var(--admin-ink);}
+.profile-text small{color:var(--admin-soft);}
+.content-header h1,.card h2{color:var(--admin-ink);}
+.content-header p{color:var(--admin-soft);}
+.card{background:#fff;border-color:var(--admin-line);border-radius:20px;box-shadow:0 1px 2px rgba(28,23,18,.04),0 10px 24px rgba(28,23,18,.04);}
+.btn-dark{background:var(--admin-ink);}
+.btn-dark:hover{background:#2b231b;}
+.btn-ghost{border-color:var(--admin-line);color:var(--admin-ink);background:#fff;}
+.step.active .step-num{background:var(--admin-brass);}
+.step.done .step-num{background:rgba(163,118,63,.14);color:var(--admin-brass-deep);}
+.step-connector.done{background:var(--admin-brass);}
+.chip.active{border-color:var(--admin-brass);background:rgba(163,118,63,.10);color:var(--admin-brass-deep);}
+.chip.active::before{color:var(--admin-brass-deep);}
+.dropzone:hover,.dropzone.dragover{border-color:var(--admin-brass);background:rgba(163,118,63,.06);}
+.dropzone p strong{color:var(--admin-brass-deep);}
+.media-item.main-item{outline-color:var(--admin-brass);}
+.btn-add{background:rgba(163,118,63,.10);color:var(--admin-brass-deep);}
+.btn-add:hover{background:rgba(163,118,63,.16);}
+.var-input:focus{border-color:var(--admin-brass);}
+.status-dot::before{background:#5c7457;}
+.premium-card{background:linear-gradient(150deg,#1c1712 0%,#3b3024 58%,#7c5a2e 100%);}
+.premium-crown{color:#d9b77b;}
+</style>
+
+</head>
+<body>
+
+<!-- DIAGNOSTIC BANNER: catches any JS error on this page and shows the
+     real message on screen, so it can be read/screenshotted directly
+     without needing to open DevTools. Safe to remove once upload issues
+     are confirmed fixed. -->
+<div id="debugBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#b91c1c;color:#fff;padding:10px 14px;font:13px/1.4 monospace;white-space:pre-wrap;max-height:40vh;overflow:auto;"></div>
+<script>
+(function () {
+  const banner = document.getElementById('debugBanner');
+  function show(msg) {
+    banner.style.display = 'block';
+    banner.textContent += (banner.textContent ? '\n\n' : '') + msg;
+  }
+  window.addEventListener('error', (e) => {
+    show('JS ERROR: ' + (e.message || e.error) + '\nat ' + (e.filename || '') + ':' + (e.lineno || '') );
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const r = e.reason;
+    const text = r && r.message ? r.message : (typeof r === 'object' ? JSON.stringify(r) : String(r));
+    show('UNHANDLED PROMISE REJECTION: ' + text);
+  });
+})();
+</script>
+
+<div class="app">
+
+  <!-- Mobile top bar (shown only on small screens) -->
+  <div class="mobile-topbar">
+    <button class="icon-btn" id="menuToggle" aria-label="Open menu">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+    <div class="mobile-logo"></div>
+    <div class="mobile-avatar"><img id="adminMobileAvatar" src="assets/user.png" alt="Admin"></div>
+  </div>
+
+  <div class="sidebar-scrim" id="sidebarScrim"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img class="admin-logo" src="assets/clarehil-styles-logo.png" alt="Clarehil Styles">
+      <span class="brand-sub">Admin Panel</span>
+    </div>
+
+    
+
+    <div class="premium-card">
+      <svg class="premium-crown" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M5 18h14l1.5-9-5 3-3.5-5-3.5 5-5-3z"></path></svg>
+      <h4>Premium Store</h4>
+      <p class="premium-tag">Admin Access</p>
+      <p class="premium-desc">Manage your store, products, orders and more.</p>
+    </div>
+    
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <header class="topbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" placeholder="Search products, orders, customers...">
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn bell" id="bellBtn" aria-label="Notifications">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span class="dot">3</span>
+        </button>
+        <button class="profile" id="profileBtn">
+          <img id="adminAvatar" src="assets/user.png" alt="Admin">
+          <span class="profile-text">
+            <strong id="adminName">Admin</strong>
+            <small id="adminRole">Administrator</small>
+          </span>
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="page-wrap">
+
+        <div class="content-header">
+          <div>
+            <h1>Add New Product</h1>
+            <p>Follow the steps below to add a new product to your store.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+          </div>
+        </div>
+
+        <!-- STEPPER -->
+        <div class="stepper" id="stepper">
+          <div class="step clickable" data-step="1"><span class="step-num">1</span><span class="step-label">Images</span></div>
+          <div class="step-connector"></div>
+          <div class="step clickable" data-step="2"><span class="step-num">2</span><span class="step-label">Details</span></div>
+          <div class="step-connector"></div>
+          <div class="step clickable" data-step="3"><span class="step-num">3</span><span class="step-label">Specifications</span></div>
+          <div class="step-connector"></div>
+          <div class="step clickable" data-step="4"><span class="step-num">4</span><span class="step-label">Variations</span></div>
+          <div class="step-connector"></div>
+          <div class="step clickable" data-step="5"><span class="step-num">5</span><span class="step-label">Review &amp; Save</span></div>
+        </div>
+
+        <!-- WIZARD -->
+        <section class="card wizard-card">
+
+          <!-- STEP 1: IMAGES -->
+          <div class="step-panel" data-panel="1">
+            <div class="step-panel-head">
+              <h2>Upload product images</h2>
+              <p>Add clear, high-quality photos. Click a thumbnail to make it the main image.</p>
+            </div>
+
+            <div class="dropzone" id="dropzone">
+              <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" multiple hidden>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <p><strong>Click to upload</strong> or drag and drop</p>
+              <span>Supports JPG, PNG, WEBP (Max 10MB each)</span>
+            </div>
+
+            <div class="media-grid" id="mediaGrid"></div>
+            <p class="media-hint">At least one image is required before you can continue.</p>
+            <p id="uploadDebugLine" style="font:12px monospace;color:#b91c1c;white-space:pre-wrap;"></p>
+
+            <div class="step-actions">
+              <span></span>
+              <button type="button" class="btn btn-dark" id="next1" disabled>Next: Product Details</button>
+            </div>
+          </div>
+
+          <!-- STEP 2: DETAILS -->
+          <div class="step-panel" data-panel="2" hidden>
+            <div class="step-panel-head">
+              <h2>Product details</h2>
+              <p>Tell customers what this product is and how much it costs.</p>
+            </div>
+
+            <div class="form-row cols-3">
+              <div class="field">
+                <label>Product Name <span class="req">*</span></label>
+                <input type="text" id="fProductName" value="AirPods Max">
+              </div>
+              <div class="field">
+                <label>Brand</label>
+                <select id="fBrand">
+                  <option>Apple</option>
+                  <option>Samsung</option>
+                  <option>Sony</option>
+                  <option>Bose</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Category <span class="req">*</span></label>
+                <select id="fCategory">
+                  <option>Headphones</option>
+                  <option>Smartphones</option>
+                  <option>Smartwatches</option>
+                  <option>Laptops</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row cols-3">
+              <div class="field">
+                <label>Price (₦) <span class="req">*</span></label>
+                <input type="number" id="fPrice" value="749000">
+              </div>
+              <div class="field">
+                <label>Original Price (₦)</label>
+                <input type="number" id="fOriginalPrice" value="899000">
+              </div>
+              <div class="field">
+                <label>Stock Quantity <span class="req">*</span></label>
+                <input type="number" id="fStock" value="50">
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Short Description <span class="req">*</span></label>
+              <textarea id="fShortDesc" maxlength="200" rows="3">Immerse yourself in rich, high-fidelity sound with the AirPods Max. Designed for comfort, crafted for an extraordinary listening experience.</textarea>
+              <span class="counter"><span id="shortCount">0</span>/200</span>
+            </div>
+
+            <div class="field">
+              <label>Long Description <span class="req">*</span></label>
+              <div class="editor">
+                <div class="editor-toolbar">
+                  <button type="button" data-cmd="bold"><svg viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 0 8H6z"></path><path d="M6 12h9a4 4 0 0 1 0 8H6z"></path></svg></button>
+                  <button type="button" data-cmd="italic"><svg viewBox="0 0 24 24"><line x1="19" y1="4" x2="10" y2="4"></line><line x1="14" y1="20" x2="5" y2="20"></line><line x1="15" y1="4" x2="9" y2="20"></line></svg></button>
+                  <button type="button" data-cmd="underline"><svg viewBox="0 0 24 24"><path d="M6 3v7a6 6 0 0 0 12 0V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg></button>
+                  <span class="tb-sep"></span>
+                  <button type="button" data-cmd="insertUnorderedList"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><circle cx="3.5" cy="6" r="1"></circle><circle cx="3.5" cy="12" r="1"></circle><circle cx="3.5" cy="18" r="1"></circle></svg></button>
+                  <button type="button" data-cmd="insertOrderedList"><svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M4 14h2l-2 3h2"></path></svg></button>
+                  <span class="tb-sep"></span>
+                  <button type="button" data-cmd="link"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></button>
+                  <button type="button" data-cmd="clear"><svg viewBox="0 0 24 24"><path d="M4 7V4h16v3"></path><path d="M9 20h6"></path><path d="M12 4v16"></path></svg></button>
+                </div>
+                <div class="editor-body" id="fLongDesc" contenteditable="true" data-max="1000">The AirPods Max deliver high-fidelity audio, industry-leading noise cancellation, and a supremely comfortable fit. From the first note to the last, every detail is designed to make your listening experience extraordinary.</div>
+                <span class="counter"><span id="longCount">0</span>/1000</span>
+              </div>
+            </div>
+
+            <div class="step-actions">
+              <button class="btn btn-ghost" id="back2">Back</button>
+              <button class="btn btn-dark" id="next2">Next: Specifications</button>
+            </div>
+          </div>
+
+          <!-- STEP 3: SPECIFICATIONS -->
+          <div class="step-panel" data-panel="3" hidden>
+            <div class="step-panel-head">
+              <h2>Product specifications</h2>
+              <p>Add the options and physical details buyers will see.</p>
+            </div>
+
+            <div class="form-row cols-3 align-top">
+              <div class="field">
+                <label>Color Options</label>
+                <div class="chip-group" id="colorGroup">
+                  <button type="button" class="chip active" data-color="#C9CBCE" data-value="Silver"><span class="chip-dot" style="background:#C9CBCE"></span>Silver</button>
+                  <button type="button" class="chip" data-color="#4B4E52" data-value="Space Gray"><span class="chip-dot" style="background:#4B4E52"></span>Space Gray</button>
+                  <button type="button" class="chip" data-color="#E39AA0" data-value="Pink"><span class="chip-dot" style="background:#E39AA0"></span>Pink</button>
+                  <button type="button" class="chip" data-color="#7FA6C9" data-value="Blue"><span class="chip-dot" style="background:#7FA6C9"></span>Blue</button>
+                </div>
+              </div>
+              <div class="field">
+                <label>Size Options</label>
+                <div class="chip-group" id="sizeGroup">
+                  <button type="button" class="chip active" data-value="Standard">Standard</button>
+                  <button type="button" class="chip" data-value="Large">Large</button>
+                </div>
+              </div>
+              <div class="field">
+                <label>Material</label>
+                <select id="fMaterial">
+                  <option>Aluminum + Memory Foam</option>
+                  <option>Plastic + Silicone</option>
+                  <option>Stainless Steel</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row cols-3">
+              <div class="field">
+                <label>Weight (kg)</label>
+                <input type="text" id="fWeight" value="0.385">
+              </div>
+              <div class="field">
+                <label>Dimensions (cm)</label>
+                <input type="text" id="fDimensions" value="16 × 16 × 8">
+              </div>
+              <div class="field">
+                <label>Warranty</label>
+                <select id="fWarranty">
+                  <option>1 Year</option>
+                  <option>2 Years</option>
+                  <option>No Warranty</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Tags (comma separated)</label>
+              <input type="text" id="fTags" value="Apple, Headphones, Premium, Wireless">
+            </div>
+
+            <div class="step-actions">
+              <button class="btn btn-ghost" id="back3">Back</button>
+              <button class="btn btn-dark" id="next3">Next: Variations</button>
+            </div>
+          </div>
+
+          <!-- STEP 4: VARIATIONS -->
+          <div class="step-panel" data-panel="4" hidden>
+            <div class="step-panel-head">
+              <h2>Product variations</h2>
+              <p>Add color or size variations if available, with their own stock and price.</p>
+            </div>
+
+            <div class="table-wrap">
+              <table class="var-table">
+                <thead>
+                  <tr><th>Color</th><th>Size</th><th>Stock</th><th>Price (₦)</th><th></th></tr>
+                </thead>
+                <tbody id="variationsBody"></tbody>
+              </table>
+            </div>
+            <button class="btn btn-add" id="addVariationBtn" type="button">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add Variation
+            </button>
+
+            <div class="step-actions">
+              <button class="btn btn-ghost" id="back4">Back</button>
+              <button class="btn btn-dark" id="next4">Next: Review &amp; Save</button>
+            </div>
+          </div>
+
+          <!-- STEP 5: REVIEW & SAVE -->
+          <div class="step-panel" data-panel="5" hidden>
+            <div class="step-panel-head">
+              <h2>Review &amp; save</h2>
+              <p>Check everything looks right before adding this product to your store.</p>
+            </div>
+
+            <div class="preview-card">
+              <div class="preview-img" id="previewImg"></div>
+              <div class="preview-info">
+                <h3 id="prevName">AirPods Max</h3>
+                <p class="preview-brand" id="prevBrand">Apple</p>
+                <div class="preview-rating">
+                  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                  <span>4.8 (1,204 reviews)</span>
+                </div>
+                <div class="preview-price-row">
+                  <span class="price-now" id="prevPrice">₦749,000</span>
+                  <span class="price-old" id="prevOldPrice">₦899,000</span>
+                  <span class="stock-pill">In Stock</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-grid" id="reviewGrid"></div>
+
+            <div class="step-actions">
+              <button class="btn btn-ghost" id="back5">Back</button>
+              <button class="btn btn-dark" id="saveBtn">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Save Product
+              </button>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- RECENT PRODUCTS (reference, not part of the wizard) -->
+        <section class="card">
+          <div class="card-head-row">
+            <h2>Recent Products</h2>
+            
+          </div>
+          <div class="table-wrap">
+            <table class="rp-table">
+              <thead>
+                <tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr>
+              </thead>
+              <tbody id="recentProductsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(async function(){
+  const access = await window.requireAdmin('dashboard.html');
+  if (!access) return;
+
+  window.ADMIN_PROFILE = access.profile || {};
+
+  // Admin profile display uses the same two-level strategy as the user dashboard:
+  // 1) use the profile/avatar returned from Supabase;
+  // 2) if the avatar URL is unavailable or the image cannot be loaded, fall back
+  //    to the profile cached in localStorage during sign-up/login.
+  // The local cache is NEVER used to grant admin access; Supabase still controls authorization.
+  const cached = window.getCachedProfile ? window.getCachedProfile(access.user?.id) : null;
+  const name = access.profile?.full_name || cached?.full_name || access.user?.user_metadata?.full_name || access.user?.email || 'Admin';
+  const dbAvatar = access.profile?.avatar_url || '';
+  const cachedAvatar = cached?.avatar_url || '';
+  const fallbackAvatar = cachedAvatar || 'assets/user.png';
+
+  document.getElementById('adminName').textContent = name;
+  document.getElementById('adminRole').textContent = access.profile?.role === 'admin' ? 'Administrator' : 'Account';
+
+  const avatarElements = [
+    document.getElementById('adminAvatar'),
+    document.getElementById('adminMobileAvatar')
+  ].filter(Boolean);
+
+  avatarElements.forEach((img) => {
+    img.dataset.cachedAvatar = cachedAvatar;
+    img.dataset.fallbackAvatar = fallbackAvatar;
+    img.onerror = function(){
+      if (this.dataset.avatarFallbackUsed === '1') return;
+      this.dataset.avatarFallbackUsed = '1';
+      const localAvatar = this.dataset.cachedAvatar || '';
+      if (localAvatar && this.src !== localAvatar) {
+        this.src = localAvatar;
+      } else if (this.src !== this.dataset.fallbackAvatar) {
+        this.src = this.dataset.fallbackAvatar;
+      }
+    };
+    // Database first. If there is no database avatar, immediately use the
+    // signup profile saved in localStorage.
+    img.src = dbAvatar || fallbackAvatar;
+  });
+})();
+// ============================================================
+// Lumé Admin — Add New Product (step-by-step wizard)
+// No database yet — all data lives in memory (window.APP_STATE)
+// Hook up your API calls where indicated with "// TODO: API".
+// ============================================================
+
+(function () {
+  'use strict';
+
+  // admin.html has never had its own escapeHtml helper — it's only defined
+  // in script.js, which this page does not load. Adding it locally.
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  // ---------- shared state (placeholder for future DB wiring) ----------
+  window.APP_STATE = {
+    media: [],       // { id, url, type: 'image'|'video', file }
+    variations: [],  // { id, color, size, stock, price }
+    selectedColor: 'Silver',
+    selectedSize: 'Standard'
+  };
+
+  const $ = (sel, ctx) => (ctx || document).querySelector(sel);
+  const $$ = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
+
+  const money = (n) => '₦' + Number(n || 0).toLocaleString('en-NG');
+
+  // ---------- toast ----------
+  let toastTimer;
+  function showToast(msg) {
+    const toast = $('#toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+
+  // ---------- mobile sidebar ----------
+  const sidebar = $('#sidebar');
+  const scrim = $('#sidebarScrim');
+  function openSidebar() { sidebar.classList.add('open'); scrim.classList.add('show'); }
+  function closeSidebar() { sidebar.classList.remove('open'); scrim.classList.remove('show'); }
+  $('#menuToggle') && $('#menuToggle').addEventListener('click', openSidebar);
+  scrim.addEventListener('click', closeSidebar);
+  $$('.nav-item').forEach(item => item.addEventListener('click', (e) => {
+    e.preventDefault();
+    $$('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    closeSidebar();
+  }));
+
+  // ---------- notification bell / profile (demo dropdown via toast) ----------
+  $('#bellBtn').addEventListener('click', () => showToast('You have 3 new notifications.'));
+  $('#profileBtn').addEventListener('click', () => showToast(`Signed in as ${window.ADMIN_PROFILE?.full_name || window.ADMIN_PROFILE?.email || 'Admin'} · Administrator`));
+
+  // ---------- character counters ----------
+  function bindCounter(inputEl, counterEl, max) {
+    function update() {
+      const len = inputEl.value !== undefined ? inputEl.value.length : inputEl.textContent.length;
+      counterEl.textContent = Math.min(len, max);
+    }
+    inputEl.addEventListener('input', update);
+    update();
+  }
+  bindCounter($('#fShortDesc'), $('#shortCount'), 200);
+
+  const longDesc = $('#fLongDesc');
+  const longCount = $('#longCount');
+  function updateLongCount() {
+    const len = longDesc.textContent.length;
+    longCount.textContent = Math.min(len, 1000);
+  }
+  longDesc.addEventListener('input', () => {
+    if (longDesc.textContent.length > 1000) {
+      longDesc.textContent = longDesc.textContent.slice(0, 1000);
+    }
+    updateLongCount();
+  });
+  updateLongCount();
+
+  // ---------- rich text toolbar ----------
+  $$('.editor-toolbar button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cmd = btn.dataset.cmd;
+      longDesc.focus();
+      if (cmd === 'link') {
+        const url = prompt('Enter link URL:', 'https://');
+        if (url) document.execCommand('createLink', false, url);
+      } else if (cmd === 'clear') {
+        document.execCommand('removeFormat');
+      } else {
+        document.execCommand(cmd, false, null);
+      }
+      btn.classList.toggle('active');
+    });
+  });
+
+  // ---------- chip groups (color / size) ----------
+  function bindChipGroup(groupEl, onSelect) {
+    $$('.chip', groupEl).forEach(chip => {
+      chip.addEventListener('click', () => {
+        $$('.chip', groupEl).forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        onSelect(chip.dataset.value, chip.dataset.color);
+      });
+    });
+  }
+  bindChipGroup($('#colorGroup'), (val) => { window.APP_STATE.selectedColor = val; });
+  bindChipGroup($('#sizeGroup'), (val) => { window.APP_STATE.selectedSize = val; });
+
+  // ---------- media uploads ----------
+  const dropzone = $('#dropzone');
+  const fileInput = $('#fileInput');
+  const mediaGrid = $('#mediaGrid');
+  const next1 = $('#next1');
+  let mediaSeed = 0;
+
+  function updateNext1(){ next1.disabled = window.APP_STATE.media.length === 0; }
+
+  function renderMedia(){
+    mediaGrid.innerHTML = '';
+    window.APP_STATE.media.forEach((item, idx) => {
+      const el = document.createElement('div');
+      el.className = 'media-item' + (idx === 0 ? ' main-item' : '');
+      const img = document.createElement('img');
+      img.src = item.url; img.alt = 'Product image';
+      el.appendChild(img);
+      if(idx === 0){ const label=document.createElement('span'); label.className='main-label'; label.textContent='Main Image'; el.appendChild(label); }
+      const remove=document.createElement('button'); remove.type='button'; remove.className='remove-btn'; remove.setAttribute('aria-label','Remove image');
+      remove.innerHTML='<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+      remove.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); window.APP_STATE.media=window.APP_STATE.media.filter(m=>m.id!==item.id); renderMedia(); syncPreview(); };
+      el.appendChild(remove);
+      el.onclick=(e)=>{ if(e.target.closest('.remove-btn')) return; const i=window.APP_STATE.media.findIndex(m=>m.id===item.id); if(i>0){ const [picked]=window.APP_STATE.media.splice(i,1); window.APP_STATE.media.unshift(picked); renderMedia(); syncPreview(); }};
+      mediaGrid.appendChild(el);
+    });
+    updateNext1();
+  }
+
+  function addMediaItem(item){ window.APP_STATE.media.push(item); renderMedia(); syncPreview(); }
+
+  function handleFiles(fileList){
+    const dbg=document.getElementById('uploadDebugLine');
+    const files=Array.from(fileList||[]);
+    if(!files.length) return;
+    files.forEach(file=>{
+      if(!/^image\/(jpeg|png|webp)$/i.test(file.type)){ if(dbg) dbg.textContent='Please select a JPG, PNG, or WEBP image.'; return; }
+      if(file.size>10*1024*1024){ if(dbg) dbg.textContent='"'+file.name+'" is larger than 10MB.'; return; }
+      const reader=new FileReader();
+      reader.onload=()=>{ addMediaItem({id:'m'+(++mediaSeed),url:reader.result,type:'image',file:file}); if(dbg) dbg.textContent='Image selected successfully. You can continue.'; };
+      reader.onerror=()=>{ if(dbg) dbg.textContent='Could not read the selected image.'; };
+      reader.readAsDataURL(file);
+    });
+    fileInput.value='';
+  }
+
+  dropzone.addEventListener('click',e=>{ if(e.target!==fileInput) fileInput.click(); });
+  fileInput.addEventListener('change',e=>handleFiles(e.target.files));
+  ['dragenter','dragover'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.add('dragover');}));
+  ['dragleave','drop'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.remove('dragover');}));
+  dropzone.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
+
+  // ---------- product variations ----------
+  const variationsBody = $('#variationsBody');
+  let varSeed = 0;
+
+  const SWATCHES = { 'Silver': '#C9CBCE', 'Space Gray': '#4B4E52', 'Pink': '#E39AA0', 'Blue': '#7FA6C9' };
+
+  function seedVariations() {
+    [
+      { color: 'Silver', size: 'Standard', stock: 50, price: 749000 },
+      { color: 'Space Gray', size: 'Standard', stock: 50, price: 749000 },
+      { color: 'Pink', size: 'Standard', stock: 50, price: 749000 },
+      { color: 'Blue', size: 'Standard', stock: 50, price: 749000 }
+    ].forEach(v => window.APP_STATE.variations.push({ id: 'v' + (++varSeed), ...v }));
+    renderVariations();
+  }
+
+  function renderVariations() {
+    variationsBody.innerHTML = '';
+    window.APP_STATE.variations.forEach(v => {
+      const tr = document.createElement('tr');
+      tr.dataset.id = v.id;
+      const swatch = SWATCHES[v.color] || '#D1D3D9';
+      tr.innerHTML = `
+        <td><span class="color-cell"><span class="color-swatch" style="background:${swatch}"></span>${v.color}</span></td>
+        <td>${v.size}</td>
+        <td><input class="var-input stock-input" type="number" value="${v.stock}" style="width:60px"></td>
+        <td><input class="var-input price-input" type="number" value="${v.price}" style="width:90px"></td>
+        <td><button class="del-btn" title="Remove variation"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg></button></td>`;
+
+      $('.stock-input', tr).addEventListener('change', (e) => { v.stock = Number(e.target.value) || 0; });
+      $('.price-input', tr).addEventListener('change', (e) => { v.price = Number(e.target.value) || 0; });
+      $('.del-btn', tr).addEventListener('click', () => {
+        window.APP_STATE.variations = window.APP_STATE.variations.filter(x => x.id !== v.id);
+        renderVariations();
+      });
+      variationsBody.appendChild(tr);
+    });
+  }
+
+  $('#addVariationBtn').addEventListener('click', () => {
+    const color = window.APP_STATE.selectedColor || 'Silver';
+    const size = window.APP_STATE.selectedSize || 'Standard';
+    const basePrice = Number($('#fPrice').value) || 0;
+    window.APP_STATE.variations.push({
+      id: 'v' + (++varSeed),
+      color, size,
+      stock: Number($('#fStock').value) || 0,
+      price: basePrice
+    });
+    renderVariations();
+    // TODO: API — persist new variation to backend
+  });
+
+  // ---------- recent products (static demo list) ----------
+  async function loadRecentProducts() {
+    const body = $('#recentProductsBody');
+    const { data, error } = await window.sb.from('products').select('id,name,category,price,stock,status,images').order('created_at',{ascending:false}).limit(8);
+    if (error) { console.error(error); body.innerHTML = `<tr><td colspan="7">Could not load products: ${escapeHtml(error.message || 'unknown error')}</td></tr>`; return; }
+    if (!data?.length) { body.innerHTML = '<tr><td colspan="7">No products have been uploaded yet.</td></tr>'; return; }
+    body.innerHTML = data.map(p => {
+      const img = Array.isArray(p.images) && p.images[0] ? p.images[0] : '';
+      return `<tr><td>${img ? `<img class="rp-thumb" src="${img}" alt="${escapeHtml(p.name)}">` : ''}</td><td class="rp-name">${escapeHtml(p.name)}</td><td>${escapeHtml(p.category || '')}</td><td>${money(p.price)}</td><td>${p.stock}</td><td><span class="status-dot">${escapeHtml(p.status)}</span></td><td></td></tr>`;
+    }).join('');
+  }
+
+  // ---------- live preview ----------
+  function syncPreview() {
+    $('#prevName').textContent = $('#fProductName').value || 'Product name';
+    $('#prevBrand').textContent = $('#fBrand').value;
+    const price = Number($('#fPrice').value) || 0;
+    const original = Number($('#fOriginalPrice').value) || 0;
+    $('#prevPrice').textContent = money(price);
+    if (original > price) {
+      $('#prevOldPrice').textContent = money(original);
+      $('#prevOldPrice').style.display = '';
+    } else {
+      $('#prevOldPrice').style.display = 'none';
+    }
+    const mainImg = window.APP_STATE.media[0];
+    const previewImg = $('#previewImg');
+    if (mainImg && mainImg.type === 'image') {
+      previewImg.style.backgroundImage = `url(${mainImg.url})`;
+    } else {
+      previewImg.style.backgroundImage = '';
+    }
+  }
+
+  ['fProductName', 'fBrand', 'fPrice', 'fOriginalPrice'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', syncPreview);
+    el.addEventListener('change', syncPreview);
+  });
+
+  // ---------- review summary (step 5) ----------
+  function renderReviewSummary() {
+    const tags = $('#fTags').value.split(',').map(t => t.trim()).filter(Boolean);
+    const rows = [
+      ['Category', $('#fCategory').value],
+      ['Stock Quantity', $('#fStock').value],
+      ['Color', window.APP_STATE.selectedColor],
+      ['Size', window.APP_STATE.selectedSize],
+      ['Material', $('#fMaterial').value],
+      ['Weight', $('#fWeight').value + ' kg'],
+      ['Dimensions', $('#fDimensions').value + ' cm'],
+      ['Warranty', $('#fWarranty').value],
+      ['Tags', tags.join(', ') || '—'],
+      ['Images', window.APP_STATE.media.length + ' uploaded'],
+      ['Variations', window.APP_STATE.variations.length + ' added']
+    ];
+    $('#reviewGrid').innerHTML = rows.map(([label, value]) => `
+      <div class="review-item">
+        <span class="rl">${label}</span>
+        <span class="rv">${value}</span>
+      </div>`).join('');
+  }
+
+  // ---------- wizard ----------
+  const TOTAL_STEPS = 5;
+  let currentStep = 1;
+  let maxStepReached = 1;
+
+  const stepper = $('#stepper');
+  const stepEls = $$('.step', stepper);
+  const connectorEls = $$('.step-connector', stepper);
+  const panels = $$('.step-panel');
+
+  function renderStepper() {
+    stepEls.forEach(el => {
+      const n = Number(el.dataset.step);
+      const numEl = $('.step-num', el);
+      el.classList.remove('active', 'done');
+      if (n < currentStep) {
+        el.classList.add('done');
+        numEl.textContent = '✓';
+      } else {
+        if (n === currentStep) el.classList.add('active');
+        numEl.textContent = n;
+      }
+    });
+    connectorEls.forEach((c, i) => c.classList.toggle('done', (i + 1) < currentStep));
+  }
+
+  function goToStep(n) {
+    panels.forEach(p => { p.hidden = Number(p.dataset.panel) !== n; });
+    currentStep = n;
+    maxStepReached = Math.max(maxStepReached, n);
+    renderStepper();
+    if (n === 5) {
+      syncPreview();
+      renderReviewSummary();
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    $('.main').scrollTo && $('.main').scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  stepEls.forEach(el => {
+    el.addEventListener('click', () => {
+      const n = Number(el.dataset.step);
+      if (n <= maxStepReached) goToStep(n);
+    });
+  });
+
+  $('#next1').addEventListener('click', (e) => { e.preventDefault(); if (!window.APP_STATE.media.length) { showToast('Please select at least one product image.'); return; } goToStep(2); });
+
+  $('#back2').addEventListener('click', () => goToStep(1));
+  $('#next2').addEventListener('click', () => {
+    const nameOk = $('#fProductName').value.trim().length > 0;
+    const priceOk = Number($('#fPrice').value) > 0;
+    const stockOk = $('#fStock').value !== '' && Number($('#fStock').value) >= 0;
+    const shortDescOk = $('#fShortDesc').value.trim().length > 0;
+    if (!nameOk || !priceOk || !stockOk || !shortDescOk) {
+      showToast('Please fill in the required fields before continuing.');
+      return;
+    }
+    goToStep(3);
+  });
+
+  $('#back3').addEventListener('click', () => goToStep(2));
+  $('#next3').addEventListener('click', () => goToStep(4));
+
+  $('#back4').addEventListener('click', () => goToStep(3));
+  $('#next4').addEventListener('click', () => goToStep(5));
+
+  $('#back5').addEventListener('click', () => goToStep(4));
+
+  // ---------- save / cancel ----------
+  $('#saveBtn').addEventListener('click', async () => {
+    const nameOk = $('#fProductName').value.trim().length > 0;
+    const priceOk = Number($('#fPrice').value) > 0;
+    if (!nameOk || !priceOk) { showToast('Please fill in the required fields before saving.'); goToStep(2); return; }
+
+    const { data: { user } } = await window.sb.auth.getUser();
+    if (!user) { showToast('Your session has expired.'); return; }
+
+    const uploadedUrls = [];
+    try {
+      showToast('Uploading product media…');
+      for (const item of window.APP_STATE.media) {
+        if (!item.file) { uploadedUrls.push(item.url); continue; }
+        const safe = item.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `products/${crypto.randomUUID()}-${safe}`;
+        const { error: uploadError } = await window.sb.storage.from('product-images').upload(path, item.file, {cacheControl:'3600', upsert:false, contentType:item.file.type});
+        if (uploadError) throw uploadError;
+        const { data: pub } = window.sb.storage.from('product-images').getPublicUrl(path);
+        uploadedUrls.push(pub.publicUrl);
+      }
+
+      const payload = {
+        name: $('#fProductName').value.trim(), brand: $('#fBrand').value.trim(), category: $('#fCategory').value,
+        price: Number($('#fPrice').value), original_price: Number($('#fOriginalPrice').value) || 0, stock: Number($('#fStock').value) || 0,
+        short_description: $('#fShortDesc').value.trim(), long_description: longDesc.innerHTML,
+        colors: window.APP_STATE.selectedColor ? [window.APP_STATE.selectedColor] : [],
+        color_names: window.APP_STATE.selectedColor ? [window.APP_STATE.selectedColor] : [],
+        sizes: window.APP_STATE.selectedSize ? [window.APP_STATE.selectedSize] : [],
+        features: [], specs: [], variations: window.APP_STATE.variations, material: $('#fMaterial').value.trim(),
+        weight: $('#fWeight').value.trim(), dimensions: $('#fDimensions').value.trim(), warranty: $('#fWarranty').value.trim(),
+        tags: $('#fTags').value.split(',').map(t => t.trim()).filter(Boolean), images: uploadedUrls,
+        status: 'published', created_by: user.id
+      };
+      const { error } = await window.sb.from('products').insert(payload);
+      if (error) throw error;
+      showToast('Product published successfully.');
+      await loadRecentProducts();
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || 'Could not save product.');
+    }
+  });
+
+  $('#cancelBtn').addEventListener('click', () => {
+    if (confirm('Discard changes to this product?')) {
+      showToast('Changes discarded.');
+    }
+  });
+
+  // ---------- init ----------
+  // Do not seed demo products/media: the store starts empty until an admin uploads a product.
+  renderMedia();
+  updateNext1();
+  seedVariations();
+  loadRecentProducts();
+  syncPreview();
+  renderStepper();
+})();
+</script>
+</body>
+</html>
